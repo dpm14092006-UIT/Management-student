@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm -F @scis/admin-web build",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_API_URL": "https://scis-backend.onrender.com"
+  }
+}
