@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "dist",
+  "public": false,
+  "projects": [
+    {
+      "name": "student-web",
+      "buildCommand": "pnpm -F @scis/student-web build",
+      "outputDirectory": "packages/student-web/dist"
+    },
+    {
+      "name": "admin-web",
+      "buildCommand": "pnpm -F @scis/admin-web build",
+      "outputDirectory": "packages/admin-web/dist"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": {
+      "default": "https://scis-backend.onrender.com"
+    }
+  }
+}

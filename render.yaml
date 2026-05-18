@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: scis-backend
+    env: node
+    plan: free
+    buildCommand: pnpm install && pnpm -F @scis/backend build
+    startCommand: pnpm -F @scis/backend start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: INGEST_SERVICE_TOKEN
+        sync: false
+    autoDeploy: true
