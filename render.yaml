@@ -3,8 +3,8 @@ services:
     name: scis-backend
     env: node
     plan: free
-    buildCommand: pnpm install && pnpm -F @scis/backend build
-    startCommand: pnpm -F @scis/backend start
+    buildCommand: pnpm install --frozen-lockfile && pnpm -F @scis/backend build && pnpm -F @scis/backend prisma generate
+    startCommand: node -r dotenv/config packages/backend/dist/src/index.js
     envVars:
       - key: NODE_ENV
         value: production
