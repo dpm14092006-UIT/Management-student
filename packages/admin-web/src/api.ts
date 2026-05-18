@@ -67,13 +67,16 @@ export const apiFetch = async <T,>(path: string, init: RequestInit = {}, session
   if (!headers.has("content-type") && init.body) {
     headers.set("content-type", "application/json");
   }
+  headers.set("cache-control", "no-cache");
+  headers.set("pragma", "no-cache");
   if (activeSession?.access) {
     headers.set("authorization", `Bearer ${activeSession.access}`);
   }
 
   let response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers
+    headers,
+    cache: "no-store"
   });
 
   if (response.status === 401 && activeSession?.refresh) {
@@ -82,10 +85,13 @@ export const apiFetch = async <T,>(path: string, init: RequestInit = {}, session
     if (!retryHeaders.has("content-type") && init.body) {
       retryHeaders.set("content-type", "application/json");
     }
+    retryHeaders.set("cache-control", "no-cache");
+    retryHeaders.set("pragma", "no-cache");
     retryHeaders.set("authorization", `Bearer ${nextSession.access}`);
     response = await fetch(`${API_BASE}${path}`, {
       ...init,
-      headers: retryHeaders
+      headers: retryHeaders,
+      cache: "no-store"
     });
   }
 

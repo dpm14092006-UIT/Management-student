@@ -46,10 +46,13 @@ const app = Fastify({
 });
 
 const publish = async (channel: string, payload: unknown) => {
-  await redis.publish(channel, JSON.stringify(payload)).catch(() => {
-    // Redis unavailable — fall through to direct Socket.IO emit
-  });
-  await emitRoom(channel as never, payload);
+  // Try Redis pubsub first — subscriber will trigger emit. If Redis is unavailable,
+  // fall back to direct Socket.IO emit. Never do both, otherwise events double-fire.
+  try {
+    await redis.publish(channel, JSON.stringify(payload));
+  } catch {
+    await emitRoom(channel as never, payload);
+  }
 };
 
 const refreshKey = (userId: string) => `auth:refresh:${userId}`;
