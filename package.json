@@ -1,0 +1,31 @@
+{
+  "name": "scis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart Campus Integrated System (UIT)",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:backend": "pnpm -F @scis/backend dev",
+    "dev:student": "pnpm -F @scis/student-web dev",
+    "dev:admin": "pnpm -F @scis/admin-web dev",
+    "build": "pnpm -r build",
+    "prod:build": "pnpm build",
+    "start:backend": "pnpm -F @scis/backend start",
+    "db:local": "pnpm -F @scis/backend tsx src/start-pg.ts",
+    "db:local:setup": "pnpm -F @scis/backend prisma migrate deploy && pnpm db:seed",
+    "dev:local": "concurrently \"pnpm db:local\" \"pnpm dev:student\" \"pnpm dev:admin\" \"pnpm dev:backend\"",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm -F @scis/backend prisma migrate dev",
+    "db:seed": "pnpm -F @scis/backend prisma db seed",
+    "sim:gate": "pnpm -F @scis/backend tsx ../../tools/simulator-gate.ts",
+    "sim:canteen": "pnpm -F @scis/backend tsx ../../tools/simulator-canteen.ts",
+    "prod:up": "docker compose -f docker-compose.prod.yml up -d --build",
+    "prod:down": "docker compose -f docker-compose.prod.yml down"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2"
+  }
+}

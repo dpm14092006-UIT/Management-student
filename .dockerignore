@@ -1,0 +1,11 @@
+node_modules
+.pnpm-store
+dist
+packages/*/dist
+packages/*/src/*.js
+packages/*/vite.config.js
+*.log
+.git
+coverage
+.cache
+.vite

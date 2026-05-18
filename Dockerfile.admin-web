@@ -1,0 +1,15 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages ./packages
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm -F @scis/shared build
+RUN pnpm -F @scis/admin-web build
+
+FROM nginx:1.27-alpine
+COPY infra/nginx.admin.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/packages/admin-web/dist /usr/share/nginx/html
+EXPOSE 80

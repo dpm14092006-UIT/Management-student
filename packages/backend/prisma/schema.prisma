@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  admin
+  lecturer
+  canteen_staff
+}
+
+enum AttendanceMethod {
+  ble
+  qr
+  manual
+}
+
+enum TransactionType {
+  topup
+  payment
+  refund
+}
+
+enum TransactionStatus {
+  success
+  pending
+  failed
+}
+
+enum OrderStatus {
+  pending
+  preparing
+  ready
+  completed
+  cancelled
+}
+
+enum GateDirection {
+  in
+  out
+}
+
+enum GateMethod {
+  qr
+  rfid
+  face
+  manual
+}
+
+enum DensitySource {
+  sensor
+  camera
+  order_proxy
+  manual
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  fullName     String
+  studentCode  String?       @unique
+  faculty      String?
+  className    String?
+  photoUrl     String?
+  role         Role
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  wallet       Wallet?
+  transactions Transaction[]
+  enrollments  Enrollment[]
+  attendances  Attendance[]
+  orders       Order[]
+  classes      Class[]       @relation("ClassInstructor")
+  gateEvents   GateEvent[]
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Decimal  @db.Decimal(12, 2)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Decimal           @db.Decimal(12, 2)
+  description String
+  status      TransactionStatus @default(success)
+  refOrderId  String?
+  createdAt   DateTime          @default(now())
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order?            @relation(fields: [refOrderId], references: [id])
+}
+
+model Class {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  name         String
+  roomLabel    String
+  schedule     Json
+  instructorId String
+  beaconId     String?
+  instructor   User         @relation("ClassInstructor", fields: [instructorId], references: [id], onDelete: Restrict)
+  beacon       Beacon?      @relation(fields: [beaconId], references: [id])
+  enrollments  Enrollment[]
+  attendances  Attendance[]
+}
+
+model Enrollment {
+  classId String
+  userId  String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([classId, userId])
+}
+
+model Beacon {
+  id        String       @id @default(cuid())
+  uuid      String       @unique
+  roomLabel String
+  active    Boolean      @default(true)
+  classes   Class[]
+  attendance Attendance[]
+}
+
+model Attendance {
+  id          String           @id @default(cuid())
+  userId      String
+  classId     String
+  beaconId    String?
+  sessionDate DateTime
+  checkInTime DateTime         @default(now())
+  method      AttendanceMethod
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class       Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  beacon      Beacon?          @relation(fields: [beaconId], references: [id])
+
+  @@unique([userId, classId, sessionDate])
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  price       Decimal     @db.Decimal(12, 2)
+  category    String
+  imageUrl    String
+  prepTimeMin Int
+  available   Boolean     @default(true)
+  stockToday  Int
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String        @id @default(cuid())
+  userId      String
+  totalAmount Decimal       @db.Decimal(12, 2)
+  pickupTime  DateTime
+  status      OrderStatus   @default(pending)
+  qrCode      String
+  pickupToken String
+  createdAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+  transactions Transaction[]
+}
+
+model OrderItem {
+  orderId     String
+  menuItemId  String
+  quantity    Int
+  unitPrice   Decimal   @db.Decimal(12, 2)
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@id([orderId, menuItemId])
+}
+
+model Gate {
+  id        String      @id @default(cuid())
+  code      String      @unique
+  name      String
+  active    Boolean     @default(true)
+  events    GateEvent[]
+  stats     GateStat1m[]
+}
+
+model GateEvent {
+  id         BigInt        @id @default(autoincrement())
+  gateId     String
+  userId     String?
+  direction  GateDirection
+  method     GateMethod
+  occurredAt DateTime
+  deviceId   String
+  gate       Gate          @relation(fields: [gateId], references: [id], onDelete: Cascade)
+  user       User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt(sort: Desc)])
+  @@index([gateId, occurredAt(sort: Desc)])
+}
+
+model GateStat1m {
+  bucketStart DateTime
+  gateId      String
+  inCount     Int
+  outCount    Int
+  gate        Gate     @relation(fields: [gateId], references: [id], onDelete: Cascade)
+
+  @@id([bucketStart, gateId])
+}
+
+model CanteenZone {
+  id        String              @id @default(cuid())
+  code      String              @unique
+  name      String
+  capacity  Int
+  xMin      Int
+  yMin      Int
+  xMax      Int
+  yMax      Int
+  floor     Int                 @default(1)
+  densities CanteenDensity[]
+  stats     CanteenDensity5m[]
+}
+
+model CanteenDensity {
+  id         BigInt        @id @default(autoincrement())
+  zoneId      String
+  occupied    Int
+  measuredAt  DateTime
+  source      DensitySource
+  zone        CanteenZone  @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@index([measuredAt(sort: Desc)])
+  @@index([zoneId, measuredAt(sort: Desc)])
+}
+
+model CanteenDensity5m {
+  bucketStart DateTime
+  zoneId      String
+  avgOccupied Decimal      @db.Decimal(6, 2)
+  peakOccupied Int
+  zone        CanteenZone  @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@id([bucketStart, zoneId])
+}

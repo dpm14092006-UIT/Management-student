@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: scis
+      POSTGRES_PASSWORD: scis_password
+      POSTGRES_DB: scis
+    volumes:
+      - scis_pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scis -d scis"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - scis_redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_URL: postgresql://scis:scis_password@postgres:5432/scis?schema=public
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: info
+      TRUSTED_PROXY: "true"
+      CORS_ORIGIN: http://localhost:8080,http://localhost:8081
+      JWT_ACCESS_SECRET: dev-access-secret-change-me-please-32chars-min
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-me-please-32chars-min
+      JWT_ACCESS_TTL: 900
+      JWT_REFRESH_TTL: 604800
+      INGEST_SERVICE_TOKEN: dev-ingest-token-change-me
+      QR_HMAC_SECRET: dev-qr-secret-change-me
+      QR_TTL_SECONDS: 60
+      APP_BASE_URL: http://localhost:4000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  student-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.student-web
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin-web
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+
+volumes:
+  scis_pgdata_prod:
+  scis_redisdata_prod:

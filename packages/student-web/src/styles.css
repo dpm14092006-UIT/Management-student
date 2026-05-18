@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+@layer components {
+  .card {
+    @apply rounded-[28px] border border-white/10 bg-white/[0.06] p-4 shadow-xl shadow-black/20 backdrop-blur;
+  }
+
+  .hero-card {
+    @apply rounded-[32px] border border-amber-300/20 bg-[linear-gradient(145deg,_rgba(120,53,15,0.85),_rgba(41,37,36,0.92))] p-5 shadow-2xl shadow-amber-950/20;
+  }
+
+  .field {
+    @apply flex flex-col gap-2 text-sm text-stone-300;
+  }
+
+  .field input,
+  .field select {
+    @apply rounded-2xl border border-white/10 bg-stone-950/80 px-4 py-3 text-base text-stone-100 outline-none;
+  }
+
+  .primary-button {
+    @apply rounded-2xl bg-amber-400 px-4 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-300;
+  }
+
+  .chip {
+    @apply rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-stone-200;
+  }
+
+  .chip-active {
+    @apply border-amber-300/60 bg-amber-400/15 text-amber-100;
+  }
+
+  .list-row {
+    @apply flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-stone-300;
+  }
+
+  .section-header {
+    @apply mb-3 flex items-center justify-between gap-3;
+  }
+
+  .section-header h3 {
+    @apply text-lg font-semibold text-stone-100;
+  }
+
+  .section-header span {
+    @apply text-xs uppercase tracking-[0.25em] text-stone-400;
+  }
+
+  .metric-box {
+    @apply rounded-2xl border border-white/10 bg-black/25 p-4 text-center;
+  }
+
+  .metric-box strong {
+    @apply block text-2xl font-semibold text-stone-100;
+  }
+
+  .metric-box span {
+    @apply text-sm text-stone-400;
+  }
+
+  .menu-card {
+    @apply flex gap-3 rounded-3xl border border-white/10 bg-black/20 p-3;
+  }
+
+  .menu-card img {
+    @apply h-24 w-24 rounded-2xl object-cover;
+  }
+
+  .menu-card p {
+    @apply mt-1 text-sm text-stone-400;
+  }
+
+  .quantity-control {
+    @apply flex items-center gap-3 rounded-full border border-white/10 px-3 py-1 text-stone-100;
+  }
+
+  .quantity-control button {
+    @apply h-7 w-7 rounded-full bg-white/10 text-base;
+  }
+
+  .zone-card {
+    @apply rounded-3xl border p-4;
+  }
+
+  .zone-low {
+    @apply border-emerald-300/30 bg-emerald-500/10 text-emerald-100;
+  }
+
+  .zone-medium {
+    @apply border-yellow-300/30 bg-yellow-500/10 text-yellow-100;
+  }
+
+  .zone-high {
+    @apply border-orange-300/30 bg-orange-500/10 text-orange-100;
+  }
+
+  .zone-critical {
+    @apply border-rose-300/30 bg-rose-500/10 text-rose-100;
+  }
+
+  .icon-button {
+    @apply flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-stone-100;
+  }
+
+  .nav-item {
+    @apply flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] text-stone-400;
+  }
+
+  .nav-item-active {
+    @apply bg-amber-400/15 text-amber-100;
+  }
+
+  .qr-placeholder {
+    @apply flex h-24 items-center justify-center text-stone-500;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

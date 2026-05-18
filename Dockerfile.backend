@@ -1,0 +1,26 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages ./packages
+COPY tools ./tools
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm -F @scis/shared build
+RUN pnpm -F @scis/backend prisma generate
+RUN pnpm -F @scis/backend build
+
+FROM node:20-alpine AS runtime
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages ./packages
+COPY tools ./tools
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build /app/packages/backend/dist ./packages/backend/dist
+
+EXPOSE 4000
+CMD ["pnpm", "-F", "@scis/backend", "start"]

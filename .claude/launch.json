@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:backend"],
+      "port": 4000
+    },
+    {
+      "name": "student-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:student"],
+      "port": 5173
+    },
+    {
+      "name": "admin-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:admin"],
+      "port": 5174
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+D:/Management/node_modules/.pnpm/@embedded-postgres+windows-x64@18.3.0-beta.17/node_modules/@embedded-postgres/windows-x64/native/bin/postgres.exe "-D" "D:\Management\packages\backend\.pg-data" "-p" "5432"
