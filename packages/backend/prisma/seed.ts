@@ -130,49 +130,58 @@ async function main() {
     }))
   });
 
-  const items = await Promise.all([
-    prisma.menuItem.create({
-      data: {
-        name: "Cơm gà xối mỡ",
-        description: "Phần cơm gà nóng, ăn nhanh cho giờ trưa.",
-        price: new Prisma.Decimal(32000),
-        category: "Món chính",
-        imageUrl: "https://images.unsplash.com/photo-1604908176997-4316f8d17cb5?auto=format&fit=crop&w=800&q=80",
-        prepTimeMin: 12,
-        available: true,
-        stockToday: 40
-      }
-    }),
-    prisma.menuItem.create({
-      data: {
-        name: "Bún bò",
-        description: "Tô bún bò đậm vị, phục vụ nhanh.",
-        price: new Prisma.Decimal(35000),
-        category: "Món chính",
-        imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80",
-        prepTimeMin: 10,
-        available: true,
-        stockToday: 25
-      }
-    }),
-    prisma.menuItem.create({
-      data: {
-        name: "Trà đào",
-        description: "Trà đào mát lạnh, ít ngọt.",
-        price: new Prisma.Decimal(8000),
-        category: "Đồ uống",
-        imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
-        prepTimeMin: 2,
-        available: true,
-        stockToday: 50
-      }
-    })
-  ]);
+  const menuSeed = [
+    // Món chính
+    { name: "Cơm gà xối mỡ", description: "Cơm tấm với gà chiên giòn, kèm dưa leo và nước mắm chua ngọt.", price: 32000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&w=600&q=70", prepTimeMin: 12, stockToday: 40 },
+    { name: "Bún bò Huế", description: "Tô bún bò đậm vị sả ớt, thịt bò mềm và chả lụa.", price: 35000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1583224964978-2257b960c3d3?auto=format&fit=crop&w=600&q=70", prepTimeMin: 10, stockToday: 30 },
+    { name: "Phở bò tái", description: "Phở bò truyền thống với nước dùng trong và thịt bò tái.", price: 40000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1576577445504-6af96477db52?auto=format&fit=crop&w=600&q=70", prepTimeMin: 8, stockToday: 35 },
+    { name: "Cơm sườn nướng", description: "Sườn nướng mật ong, cơm tấm thơm, kèm trứng ốp la.", price: 38000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=600&q=70", prepTimeMin: 15, stockToday: 25 },
+    { name: "Bún chả Hà Nội", description: "Chả nướng than hoa, bún tươi và nước chấm pha chuẩn vị.", price: 36000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=70", prepTimeMin: 12, stockToday: 28 },
+    { name: "Mì Quảng", description: "Mì Quảng truyền thống với tôm, thịt heo và bánh tráng nướng.", price: 35000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=70", prepTimeMin: 10, stockToday: 20 },
+    { name: "Hủ tiếu Nam Vang", description: "Hủ tiếu thơm vị nước hầm xương, tôm thịt nhiều topping.", price: 33000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=600&q=70", prepTimeMin: 9, stockToday: 30 },
+
+    // Món phụ
+    { name: "Gỏi cuốn tôm thịt", description: "Cuốn gỏi tươi với tôm, thịt heo, bún và rau sống.", price: 18000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1606270842450-39a1b9a4dc5a?auto=format&fit=crop&w=600&q=70", prepTimeMin: 5, stockToday: 40 },
+    { name: "Chả giò chiên", description: "Chả giò vàng giòn, nhân thịt heo và mộc nhĩ.", price: 20000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1625938145744-e380515399b7?auto=format&fit=crop&w=600&q=70", prepTimeMin: 7, stockToday: 50 },
+    { name: "Bánh mì thịt nguội", description: "Bánh mì giòn với pate, chả lụa, dưa chua và rau thơm.", price: 22000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1600891963935-9e9b7d5db82d?auto=format&fit=crop&w=600&q=70", prepTimeMin: 4, stockToday: 60 },
+
+    // Đồ uống
+    { name: "Trà đào cam sả", description: "Trà đào ngon mát kết hợp cam tươi và sả thơm.", price: 18000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=600&q=70", prepTimeMin: 3, stockToday: 80 },
+    { name: "Cà phê sữa đá", description: "Cà phê phin truyền thống với sữa đặc.", price: 15000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1545665277-5937489579f2?auto=format&fit=crop&w=600&q=70", prepTimeMin: 3, stockToday: 100 },
+    { name: "Nước cam ép", description: "Nước cam tươi vắt, không đường, không đá.", price: 20000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 50 },
+    { name: "Sinh tố bơ", description: "Sinh tố bơ xay nhuyễn với sữa tươi và đá.", price: 22000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=600&q=70", prepTimeMin: 4, stockToday: 40 },
+    { name: "Trà sữa trân châu", description: "Trà sữa béo thơm, trân châu dai mềm.", price: 25000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1558857563-c0c6ee6ff8bd?auto=format&fit=crop&w=600&q=70", prepTimeMin: 5, stockToday: 70 },
+
+    // Tráng miệng
+    { name: "Chè đậu xanh", description: "Chè đậu xanh nước cốt dừa béo ngậy.", price: 12000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 50 },
+    { name: "Sữa chua nếp cẩm", description: "Sữa chua mát lạnh kết hợp nếp cẩm dẻo thơm.", price: 15000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 40 },
+    { name: "Bánh flan", description: "Bánh flan mịn, caramel đậm vị.", price: 10000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 60 }
+  ];
+
+  const items = await Promise.all(
+    menuSeed.map((item) =>
+      prisma.menuItem.create({
+        data: {
+          name: item.name,
+          description: item.description,
+          price: new Prisma.Decimal(item.price),
+          category: item.category,
+          imageUrl: item.imageUrl,
+          prepTimeMin: item.prepTimeMin,
+          available: true,
+          stockToday: item.stockToday
+        }
+      })
+    )
+  );
+
+  const drinkIdx = menuSeed.findIndex((m) => m.name === "Trà đào cam sả");
+  const sampleTotal = Number(items[0]!.price) + Number(items[drinkIdx]!.price);
 
   const order = await prisma.order.create({
     data: {
       userId: students[0]!.id,
-      totalAmount: new Prisma.Decimal(40000),
+      totalAmount: new Prisma.Decimal(sampleTotal),
       pickupTime: new Date(Date.now() + 30 * 60 * 1000),
       status: "ready",
       qrCode: "SCIS-ORDER-SAMPLE",
@@ -185,9 +194,9 @@ async function main() {
             unitPrice: items[0]!.price
           },
           {
-            menuItemId: items[2]!.id,
+            menuItemId: items[drinkIdx]!.id,
             quantity: 1,
-            unitPrice: items[2]!.price
+            unitPrice: items[drinkIdx]!.price
           }
         ]
       }
@@ -206,7 +215,7 @@ async function main() {
       {
         userId: students[0]!.id,
         type: TransactionType.payment,
-        amount: new Prisma.Decimal(40000),
+        amount: new Prisma.Decimal(sampleTotal),
         description: "Thanh toán đơn ăn trưa",
         status: TransactionStatus.success,
         refOrderId: order.id

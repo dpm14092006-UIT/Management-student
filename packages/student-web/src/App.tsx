@@ -50,6 +50,16 @@ const currency = new Intl.NumberFormat("vi-VN", {
   maximumFractionDigits: 0
 });
 
+const FALLBACK_FOOD_IMG =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23292524' width='96' height='96' rx='16'/><text x='50%25' y='52%25' fill='%23f59e0b' font-family='sans-serif' font-size='32' font-weight='700' text-anchor='middle' dominant-baseline='middle'>🍽</text></svg>";
+
+const handleImgError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  const target = event.currentTarget;
+  if (target.src !== FALLBACK_FOOD_IMG) {
+    target.src = FALLBACK_FOOD_IMG;
+  }
+};
+
 const useSessionState = () => {
   const [session, setSession] = useState<Session | null>(() => readSession());
   useEffect(() => writeSession(session), [session]);
@@ -205,10 +215,11 @@ const LoginPage = ({ onLoggedIn }: { onLoggedIn: (session: Session) => void }) =
 
 const HomePage = ({ session }: { session: Session }) => {
   const qr = usePolling<{ token: string; expiresIn: number }>(() => apiFetch("/api/students/me/qrcode", {}, session), [session.access], 55_000);
+  // Profile data changes rarely; 60s poll is plenty.
   const me = usePolling<{ walletBalance: number; classes: Array<{ id: string; name: string; roomLabel: string }> }>(
     () => apiFetch("/api/students/me", {}, session),
     [session.access],
-    20_000
+    60_000
   );
 
   return (
@@ -326,11 +337,11 @@ const AttendancePage = ({ session }: { session: Session }) => {
 };
 
 const WalletPage = ({ session }: { session: Session }) => {
-  const wallet = usePolling<{ balance: number }>(() => apiFetch("/api/wallet/balance", {}, session), [session.access], 15_000);
+  const wallet = usePolling<{ balance: number }>(() => apiFetch("/api/wallet/balance", {}, session), [session.access], 30_000);
   const transactions = usePolling<Array<{ id: string; type: string; amount: number; description: string; createdAt: string }>>(
     () => apiFetch("/api/wallet/transactions", {}, session),
     [session.access],
-    15_000
+    30_000
   );
   const [amount, setAmount] = useState(200000);
 
@@ -414,9 +425,11 @@ const localDatetimeNow = (offsetMs = 0) => {
 };
 
 const DiningPage = ({ session }: { session: Session }) => {
-  const menu = usePolling<MenuItem[]>(() => apiFetch("/api/menu", {}, session), [session.access], 30_000);
-  const orders = usePolling<Order[]>(() => apiFetch("/api/orders/me", {}, session), [session.access], 10_000);
-  const wallet = usePolling<{ balance: number }>(() => apiFetch("/api/wallet/balance", {}, session), [session.access], 15_000);
+  // Menu rarely changes — fetch once, no polling.
+  // Orders/wallet updated via Socket.IO instantly; polling is a backup safety net.
+  const menu = usePolling<MenuItem[]>(() => apiFetch("/api/menu", {}, session), [session.access], 0);
+  const orders = usePolling<Order[]>(() => apiFetch("/api/orders/me", {}, session), [session.access], 30_000);
+  const wallet = usePolling<{ balance: number }>(() => apiFetch("/api/wallet/balance", {}, session), [session.access], 30_000);
   const [cart, setCart] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -518,7 +531,7 @@ const DiningPage = ({ session }: { session: Session }) => {
           ) : (
             filteredMenu.map((item) => (
               <div className="menu-card" key={item.id}>
-                <img alt={item.name} src={item.imageUrl} />
+                <img alt={item.name} src={item.imageUrl} loading="lazy" decoding="async" onError={handleImgError} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-1">
                     <strong className="leading-tight">{item.name}</strong>
@@ -644,7 +657,7 @@ const DiningPage = ({ session }: { session: Session }) => {
 };
 
 const CanteenPage = ({ session }: { session: Session }) => {
-  const heatmap = usePolling<HeatmapZone[]>(() => apiFetch("/api/canteen/heatmap/live", {}, session), [session.access], 5_000);
+  const heatmap = usePolling<HeatmapZone[]>(() => apiFetch("/api/canteen/heatmap/live", {}, session), [session.access], 15_000);
   return (
     <div className="space-y-4">
       <section className="hero-card">
