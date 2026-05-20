@@ -131,31 +131,31 @@ async function main() {
   });
 
   const menuSeed = [
-    // Món chính
-    { name: "Cơm gà xối mỡ", description: "Cơm tấm với gà chiên giòn, kèm dưa leo và nước mắm chua ngọt.", price: 32000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&w=600&q=70", prepTimeMin: 12, stockToday: 40 },
-    { name: "Bún bò Huế", description: "Tô bún bò đậm vị sả ớt, thịt bò mềm và chả lụa.", price: 35000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1583224964978-2257b960c3d3?auto=format&fit=crop&w=600&q=70", prepTimeMin: 10, stockToday: 30 },
-    { name: "Phở bò tái", description: "Phở bò truyền thống với nước dùng trong và thịt bò tái.", price: 40000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1576577445504-6af96477db52?auto=format&fit=crop&w=600&q=70", prepTimeMin: 8, stockToday: 35 },
-    { name: "Cơm sườn nướng", description: "Sườn nướng mật ong, cơm tấm thơm, kèm trứng ốp la.", price: 38000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=600&q=70", prepTimeMin: 15, stockToday: 25 },
-    { name: "Bún chả Hà Nội", description: "Chả nướng than hoa, bún tươi và nước chấm pha chuẩn vị.", price: 36000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=70", prepTimeMin: 12, stockToday: 28 },
-    { name: "Mì Quảng", description: "Mì Quảng truyền thống với tôm, thịt heo và bánh tráng nướng.", price: 35000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=70", prepTimeMin: 10, stockToday: 20 },
-    { name: "Hủ tiếu Nam Vang", description: "Hủ tiếu thơm vị nước hầm xương, tôm thịt nhiều topping.", price: 33000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=600&q=70", prepTimeMin: 9, stockToday: 30 },
+    // Món chính (calories ~400-700)
+    { name: "Cơm gà xối mỡ", description: "Cơm tấm với gà chiên giòn, kèm dưa leo và nước mắm chua ngọt.", price: 32000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&w=600&q=70", prepTimeMin: 12, stockToday: 40, calories: 650, protein: 28, fat: 24, carbs: 78 },
+    { name: "Bún bò Huế", description: "Tô bún bò đậm vị sả ớt, thịt bò mềm và chả lụa.", price: 35000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1583224964978-2257b960c3d3?auto=format&fit=crop&w=600&q=70", prepTimeMin: 10, stockToday: 30, calories: 480, protein: 25, fat: 14, carbs: 62 },
+    { name: "Phở bò tái", description: "Phở bò truyền thống với nước dùng trong và thịt bò tái.", price: 40000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1576577445504-6af96477db52?auto=format&fit=crop&w=600&q=70", prepTimeMin: 8, stockToday: 35, calories: 420, protein: 26, fat: 8, carbs: 60 },
+    { name: "Cơm sườn nướng", description: "Sườn nướng mật ong, cơm tấm thơm, kèm trứng ốp la.", price: 38000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=600&q=70", prepTimeMin: 15, stockToday: 25, calories: 720, protein: 32, fat: 28, carbs: 80 },
+    { name: "Bún chả Hà Nội", description: "Chả nướng than hoa, bún tươi và nước chấm pha chuẩn vị.", price: 36000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=70", prepTimeMin: 12, stockToday: 28, calories: 540, protein: 24, fat: 18, carbs: 68 },
+    { name: "Mì Quảng", description: "Mì Quảng truyền thống với tôm, thịt heo và bánh tráng nướng.", price: 35000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=70", prepTimeMin: 10, stockToday: 20, calories: 510, protein: 22, fat: 16, carbs: 65 },
+    { name: "Hủ tiếu Nam Vang", description: "Hủ tiếu thơm vị nước hầm xương, tôm thịt nhiều topping.", price: 33000, category: "Món chính", imageUrl: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=600&q=70", prepTimeMin: 9, stockToday: 30, calories: 470, protein: 23, fat: 12, carbs: 64 },
 
-    // Món phụ
-    { name: "Gỏi cuốn tôm thịt", description: "Cuốn gỏi tươi với tôm, thịt heo, bún và rau sống.", price: 18000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1606270842450-39a1b9a4dc5a?auto=format&fit=crop&w=600&q=70", prepTimeMin: 5, stockToday: 40 },
-    { name: "Chả giò chiên", description: "Chả giò vàng giòn, nhân thịt heo và mộc nhĩ.", price: 20000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1625938145744-e380515399b7?auto=format&fit=crop&w=600&q=70", prepTimeMin: 7, stockToday: 50 },
-    { name: "Bánh mì thịt nguội", description: "Bánh mì giòn với pate, chả lụa, dưa chua và rau thơm.", price: 22000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1600891963935-9e9b7d5db82d?auto=format&fit=crop&w=600&q=70", prepTimeMin: 4, stockToday: 60 },
+    // Món phụ (calories ~150-300)
+    { name: "Gỏi cuốn tôm thịt", description: "Cuốn gỏi tươi với tôm, thịt heo, bún và rau sống.", price: 18000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1606270842450-39a1b9a4dc5a?auto=format&fit=crop&w=600&q=70", prepTimeMin: 5, stockToday: 40, calories: 180, protein: 12, fat: 3, carbs: 24 },
+    { name: "Chả giò chiên", description: "Chả giò vàng giòn, nhân thịt heo và mộc nhĩ.", price: 20000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1625938145744-e380515399b7?auto=format&fit=crop&w=600&q=70", prepTimeMin: 7, stockToday: 50, calories: 290, protein: 9, fat: 16, carbs: 28 },
+    { name: "Bánh mì thịt nguội", description: "Bánh mì giòn với pate, chả lụa, dưa chua và rau thơm.", price: 22000, category: "Món phụ", imageUrl: "https://images.unsplash.com/photo-1600891963935-9e9b7d5db82d?auto=format&fit=crop&w=600&q=70", prepTimeMin: 4, stockToday: 60, calories: 380, protein: 14, fat: 12, carbs: 52 },
 
-    // Đồ uống
-    { name: "Trà đào cam sả", description: "Trà đào ngon mát kết hợp cam tươi và sả thơm.", price: 18000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=600&q=70", prepTimeMin: 3, stockToday: 80 },
-    { name: "Cà phê sữa đá", description: "Cà phê phin truyền thống với sữa đặc.", price: 15000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1545665277-5937489579f2?auto=format&fit=crop&w=600&q=70", prepTimeMin: 3, stockToday: 100 },
-    { name: "Nước cam ép", description: "Nước cam tươi vắt, không đường, không đá.", price: 20000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 50 },
-    { name: "Sinh tố bơ", description: "Sinh tố bơ xay nhuyễn với sữa tươi và đá.", price: 22000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=600&q=70", prepTimeMin: 4, stockToday: 40 },
-    { name: "Trà sữa trân châu", description: "Trà sữa béo thơm, trân châu dai mềm.", price: 25000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1558857563-c0c6ee6ff8bd?auto=format&fit=crop&w=600&q=70", prepTimeMin: 5, stockToday: 70 },
+    // Đồ uống (calories ~50-300)
+    { name: "Trà đào cam sả", description: "Trà đào ngon mát kết hợp cam tươi và sả thơm.", price: 18000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=600&q=70", prepTimeMin: 3, stockToday: 80, calories: 140, protein: 0, fat: 0, carbs: 35 },
+    { name: "Cà phê sữa đá", description: "Cà phê phin truyền thống với sữa đặc.", price: 15000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1545665277-5937489579f2?auto=format&fit=crop&w=600&q=70", prepTimeMin: 3, stockToday: 100, calories: 180, protein: 3, fat: 6, carbs: 28 },
+    { name: "Nước cam ép", description: "Nước cam tươi vắt, không đường, không đá.", price: 20000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 50, calories: 110, protein: 2, fat: 0, carbs: 26 },
+    { name: "Sinh tố bơ", description: "Sinh tố bơ xay nhuyễn với sữa tươi và đá.", price: 22000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=600&q=70", prepTimeMin: 4, stockToday: 40, calories: 280, protein: 6, fat: 14, carbs: 32 },
+    { name: "Trà sữa trân châu", description: "Trà sữa béo thơm, trân châu dai mềm.", price: 25000, category: "Đồ uống", imageUrl: "https://images.unsplash.com/photo-1558857563-c0c6ee6ff8bd?auto=format&fit=crop&w=600&q=70", prepTimeMin: 5, stockToday: 70, calories: 310, protein: 4, fat: 8, carbs: 56 },
 
-    // Tráng miệng
-    { name: "Chè đậu xanh", description: "Chè đậu xanh nước cốt dừa béo ngậy.", price: 12000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 50 },
-    { name: "Sữa chua nếp cẩm", description: "Sữa chua mát lạnh kết hợp nếp cẩm dẻo thơm.", price: 15000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 40 },
-    { name: "Bánh flan", description: "Bánh flan mịn, caramel đậm vị.", price: 10000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 60 }
+    // Tráng miệng (calories ~120-250)
+    { name: "Chè đậu xanh", description: "Chè đậu xanh nước cốt dừa béo ngậy.", price: 12000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 50, calories: 220, protein: 5, fat: 7, carbs: 36 },
+    { name: "Sữa chua nếp cẩm", description: "Sữa chua mát lạnh kết hợp nếp cẩm dẻo thơm.", price: 15000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 40, calories: 180, protein: 6, fat: 4, carbs: 30 },
+    { name: "Bánh flan", description: "Bánh flan mịn, caramel đậm vị.", price: 10000, category: "Tráng miệng", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=70", prepTimeMin: 2, stockToday: 60, calories: 160, protein: 4, fat: 5, carbs: 26 }
   ];
 
   const items = await Promise.all(
@@ -169,7 +169,11 @@ async function main() {
           imageUrl: item.imageUrl,
           prepTimeMin: item.prepTimeMin,
           available: true,
-          stockToday: item.stockToday
+          stockToday: item.stockToday,
+          calories: item.calories,
+          protein: new Prisma.Decimal(item.protein),
+          fat: new Prisma.Decimal(item.fat),
+          carbs: new Prisma.Decimal(item.carbs)
         }
       })
     )

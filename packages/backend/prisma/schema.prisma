@@ -158,6 +158,10 @@ model MenuItem {
   prepTimeMin Int
   available   Boolean     @default(true)
   stockToday  Int
+  calories    Int         @default(0)
+  protein     Decimal     @default(0) @db.Decimal(6, 2)
+  fat         Decimal     @default(0) @db.Decimal(6, 2)
+  carbs       Decimal     @default(0) @db.Decimal(6, 2)
   orderItems  OrderItem[]
 }
 

@@ -1,4 +1,4 @@
-import { Home, IdCard, Map, Salad, UserRound, Wallet, CalendarDays, LogOut } from "lucide-react";
+import { Home, IdCard, Map, Salad, UserRound, Wallet, CalendarDays, LogOut, Flame, Activity } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -16,17 +16,34 @@ type MenuItem = {
   imageUrl: string;
   prepTimeMin: number;
   stockToday: number;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 };
 
 type Order = {
   id: string;
   status: string;
   totalAmount: number;
+  totalCalories: number;
   pickupTime: string;
   qrCode: string;
   pickupToken: string;
   createdAt: string;
-  items: Array<{ id: string; name: string; quantity: number; unitPrice: number }>;
+  items: Array<{ id: string; name: string; quantity: number; unitPrice: number; calories: number }>;
+};
+
+type DailyNutrition = {
+  date: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  dailyTarget: number;
+  progress: number;
+  items: Array<{ name: string; quantity: number; calories: number }>;
+  orderCount: number;
 };
 
 type AttendanceStat = {
@@ -52,6 +69,14 @@ const currency = new Intl.NumberFormat("vi-VN", {
 
 const FALLBACK_FOOD_IMG =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23292524' width='96' height='96' rx='16'/><text x='50%25' y='52%25' fill='%23f59e0b' font-family='sans-serif' font-size='32' font-weight='700' text-anchor='middle' dominant-baseline='middle'>🍽</text></svg>";
+
+const resolveMenuImage = (item: MenuItem) => {
+  // Demo seed images are remote and can expire; keep the PWA stable offline/local.
+  if (!item.imageUrl || item.imageUrl.startsWith("https://images.unsplash.com/")) {
+    return FALLBACK_FOOD_IMG;
+  }
+  return item.imageUrl;
+};
 
 const handleImgError = (event: React.SyntheticEvent<HTMLImageElement>) => {
   const target = event.currentTarget;
@@ -119,10 +144,10 @@ const AppShell = ({
   const location = useLocation();
   const items = [
     { to: "/", label: "Trang chủ", icon: Home },
-    { to: "/attendance", label: "Điểm danh", icon: CalendarDays },
-    { to: "/wallet", label: "Ví", icon: Wallet },
     { to: "/dining", label: "Căn tin", icon: Salad },
-    { to: "/canteen", label: "Heatmap", icon: Map },
+    { to: "/nutrition", label: "Calo", icon: Flame },
+    { to: "/wallet", label: "Ví", icon: Wallet },
+    { to: "/attendance", label: "Điểm danh", icon: CalendarDays },
     { to: "/profile", label: "Hồ sơ", icon: UserRound }
   ];
 
@@ -221,6 +246,11 @@ const HomePage = ({ session }: { session: Session }) => {
     [session.access],
     60_000
   );
+  const nutrition = usePolling<DailyNutrition>(
+    () => apiFetch("/api/students/me/nutrition/daily", {}, session),
+    [session.access],
+    60_000
+  );
 
   return (
     <div className="space-y-4">
@@ -244,6 +274,38 @@ const HomePage = ({ session }: { session: Session }) => {
           </div>
         </div>
       </section>
+
+      <Link
+        to="/nutrition"
+        className="block rounded-3xl border border-orange-300/20 bg-gradient-to-br from-orange-500/15 to-amber-500/5 p-4 transition active:scale-[0.99]"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/20">
+              <Flame className="text-orange-300" size={22} />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-orange-200/80">Calo hôm nay</p>
+              <p className="text-xl font-semibold text-stone-100 m-0">
+                {nutrition.data?.calories ?? 0}
+                <span className="ml-1 text-xs text-stone-400">/ {nutrition.data?.dailyTarget ?? 2000} kcal</span>
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-stone-400 m-0">{nutrition.data?.orderCount ?? 0} đơn</p>
+            <p className="text-[11px] text-orange-300 m-0">Xem chi tiết →</p>
+          </div>
+        </div>
+        <div className="mt-3 h-2 rounded-full bg-stone-900/80 overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${
+              (nutrition.data?.calories ?? 0) > (nutrition.data?.dailyTarget ?? 2000) ? "bg-rose-400" : "bg-orange-400"
+            }`}
+            style={{ width: `${Math.min(((nutrition.data?.calories ?? 0) / (nutrition.data?.dailyTarget ?? 2000)) * 100, 100)}%` }}
+          />
+        </div>
+      </Link>
 
       <section className="card">
         <div className="section-header">
@@ -448,6 +510,14 @@ const DiningPage = ({ session }: { session: Session }) => {
   const [submitting, setSubmitting] = useState(false);
   const [orderMessage, setOrderMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
+  const updateCart = (itemId: string, nextQuantity: (current: number) => number) => {
+    setOrderMessage(null);
+    setCart((current) => ({
+      ...current,
+      [itemId]: Math.max(nextQuantity(current[itemId] ?? 0), 0)
+    }));
+  };
+
   const categories = useMemo(() => {
     const cats = Array.from(new Set((menu.data ?? []).map((item) => item.category)));
     return [ALL_CATEGORIES, ...cats.sort()];
@@ -467,20 +537,46 @@ const DiningPage = ({ session }: { session: Session }) => {
   );
 
   const total = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalCalories = selectedItems.reduce((sum, item) => sum + item.calories * item.quantity, 0);
   const balance = wallet.data?.balance ?? 0;
+  const walletLoading = total > 0 && wallet.data === null && !wallet.error;
   const insufficient = wallet.data !== null && balance < total && total > 0;
-  const pickupInPast = new Date(pickupTime) <= new Date();
+  const pickupDate = new Date(pickupTime);
+  const pickupInvalid = Number.isNaN(pickupDate.getTime());
+  const pickupInPast = !pickupInvalid && pickupDate <= new Date();
 
   const placeOrder = async () => {
-    if (!selectedItems.length || submitting || insufficient || pickupInPast) return;
-    setSubmitting(true);
+    if (submitting) return;
     setOrderMessage(null);
+
+    if (!selectedItems.length) {
+      setOrderMessage({ kind: "error", text: "Vui lòng chọn ít nhất một món trước khi đặt." });
+      return;
+    }
+    if (walletLoading) {
+      setOrderMessage({ kind: "error", text: "Đang kiểm tra số dư ví, vui lòng thử lại sau vài giây." });
+      return;
+    }
+    if (wallet.error) {
+      setOrderMessage({ kind: "error", text: `Không kiểm tra được số dư ví: ${wallet.error}` });
+      return;
+    }
+    if (insufficient) {
+      setOrderMessage({ kind: "error", text: `Số dư không đủ. Cần thêm ${currency.format(total - balance)} trước khi đặt món.` });
+      return;
+    }
+    if (pickupInvalid || pickupInPast) {
+      setOrderMessage({ kind: "error", text: "Vui lòng chọn giờ nhận món trong tương lai." });
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await apiFetch("/api/orders", {
         method: "POST",
         body: JSON.stringify({
           items: selectedItems.map((item) => ({ menuItemId: item.id, quantity: item.quantity })),
-          pickupTime: new Date(pickupTime).toISOString()
+          pickupTime: pickupDate.toISOString()
         })
       }, session);
       setCart({});
@@ -501,6 +597,20 @@ const DiningPage = ({ session }: { session: Session }) => {
 
   return (
     <div className="space-y-4">
+      {orderMessage ? (
+        <div
+          aria-live={orderMessage.kind === "error" ? "assertive" : "polite"}
+          className={`fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium shadow-2xl backdrop-blur ${
+            orderMessage.kind === "success"
+              ? "border-emerald-300/30 bg-emerald-950/95 text-emerald-100"
+              : "border-rose-300/30 bg-rose-950/95 text-rose-100"
+          }`}
+          role={orderMessage.kind === "error" ? "alert" : "status"}
+        >
+          {orderMessage.text}
+        </div>
+      ) : null}
+
       {/* Menu section */}
       <section className="card">
         <div className="section-header">
@@ -531,19 +641,25 @@ const DiningPage = ({ session }: { session: Session }) => {
           ) : (
             filteredMenu.map((item) => (
               <div className="menu-card" key={item.id}>
-                <img alt={item.name} src={item.imageUrl} loading="lazy" decoding="async" onError={handleImgError} />
+                <img alt={item.name} src={resolveMenuImage(item)} loading="lazy" decoding="async" onError={handleImgError} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-1">
                     <strong className="leading-tight">{item.name}</strong>
                     <span className="text-xs text-stone-400 flex-shrink-0">{item.prepTimeMin} phút</span>
                   </div>
                   <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">{item.description}</p>
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-orange-300/90">
+                    <Flame size={11} />
+                    <span>{item.calories} kcal</span>
+                    <span className="text-stone-500">·</span>
+                    <span className="text-stone-400">P {item.protein}g · F {item.fat}g · C {item.carbs}g</span>
+                  </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="font-semibold">{currency.format(item.price)}</span>
                     <div className="quantity-control">
-                      <button onClick={() => setCart((c) => ({ ...c, [item.id]: Math.max((c[item.id] ?? 0) - 1, 0) }))}>-</button>
+                      <button onClick={() => updateCart(item.id, (current) => current - 1)}>-</button>
                       <strong>{cart[item.id] ?? 0}</strong>
-                      <button onClick={() => setCart((c) => ({ ...c, [item.id]: (c[item.id] ?? 0) + 1 }))}>+</button>
+                      <button onClick={() => updateCart(item.id, (current) => current + 1)}>+</button>
                     </div>
                   </div>
                 </div>
@@ -561,14 +677,20 @@ const DiningPage = ({ session }: { session: Session }) => {
         </div>
 
         {selectedItems.length > 0 && (
-          <div className="space-y-1 text-sm text-stone-300">
-            {selectedItems.map((item) => (
-              <div key={item.id} className="flex justify-between">
-                <span>{item.name} × {item.quantity}</span>
-                <span>{currency.format(item.price * item.quantity)}</span>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="space-y-1 text-sm text-stone-300">
+              {selectedItems.map((item) => (
+                <div key={item.id} className="flex justify-between">
+                  <span>{item.name} × {item.quantity}</span>
+                  <span>{currency.format(item.price * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-orange-300/20 bg-orange-500/10 px-3 py-2 text-sm text-orange-200">
+              <span className="flex items-center gap-2"><Flame size={14} /> Tổng calo</span>
+              <strong>{totalCalories} kcal</strong>
+            </div>
+          </>
         )}
 
         {insufficient && (
@@ -586,11 +708,11 @@ const DiningPage = ({ session }: { session: Session }) => {
             onChange={(e) => setPickupTime(e.target.value)}
           />
         </label>
-        {pickupInPast && <p className="text-xs text-rose-300">Vui lòng chọn thời gian trong tương lai.</p>}
+        {(pickupInvalid || pickupInPast) && <p className="text-xs text-rose-300">Vui lòng chọn thời gian trong tương lai.</p>}
 
         <button
           className="primary-button w-full"
-          disabled={!selectedItems.length || submitting || insufficient || pickupInPast}
+          disabled={submitting}
           onClick={() => void placeOrder()}
         >
           {submitting ? "Đang đặt..." : `Đặt ngay${total > 0 ? ` · ${currency.format(total)}` : ""}`}
@@ -627,6 +749,11 @@ const DiningPage = ({ session }: { session: Session }) => {
                     <p className="text-xs text-stone-400 mt-1">
                       {order.items.map((item) => `${item.name} ×${item.quantity}`).join(", ")}
                     </p>
+                    {order.totalCalories > 0 && (
+                      <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-orange-300">
+                        <Flame size={11} /> {order.totalCalories} kcal
+                      </p>
+                    )}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-stone-400">Nhận lúc</p>
@@ -651,6 +778,122 @@ const DiningPage = ({ session }: { session: Session }) => {
             ))
           )}
         </div>
+      </section>
+    </div>
+  );
+};
+
+const NutritionPage = ({ session }: { session: Session }) => {
+  const nutrition = usePolling<DailyNutrition>(
+    () => apiFetch("/api/students/me/nutrition/daily", {}, session),
+    [session.access],
+    30_000
+  );
+
+  // Live update khi đặt đơn mới hoặc đổi trạng thái.
+  useEffect(() => {
+    const socket = io({ path: "/socket.io" });
+    socket.emit("join:orders", session.user.id);
+    const refresh = () => {
+      void apiFetch<DailyNutrition>("/api/students/me/nutrition/daily", {}, session).then(nutrition.setData).catch(() => {});
+    };
+    socket.on("order:new", refresh);
+    socket.on("order:status", refresh);
+    return () => { socket.disconnect(); };
+  }, [session.access]);
+
+  if (nutrition.error) {
+    return <p className="text-sm text-rose-300">Không tải được dữ liệu calo: {nutrition.error}</p>;
+  }
+
+  const data = nutrition.data;
+  const progressPct = Math.round((data?.progress ?? 0) * 100);
+  const overTarget = (data?.calories ?? 0) > (data?.dailyTarget ?? 2000);
+
+  return (
+    <div className="space-y-4">
+      <section className="hero-card">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-amber-200/80">Theo dõi calo hôm nay</p>
+            <h2 className="mt-1 flex items-baseline gap-2">
+              <span className="text-3xl font-semibold">{data?.calories ?? 0}</span>
+              <span className="text-sm text-stone-300">/ {data?.dailyTarget ?? 2000} kcal</span>
+            </h2>
+            <p className="mt-1 text-xs text-stone-400">
+              {data?.orderCount ?? 0} đơn · {new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" })}
+            </p>
+          </div>
+          <Flame className="text-orange-400" size={32} />
+        </div>
+
+        <div className="mt-4">
+          <div className="h-3 rounded-full bg-stone-900/80 overflow-hidden">
+            <div
+              className={`h-full transition-all duration-500 ${
+                overTarget ? "bg-rose-400" : progressPct > 75 ? "bg-amber-400" : "bg-emerald-400"
+              }`}
+              style={{ width: `${Math.min(progressPct, 100)}%` }}
+            />
+          </div>
+          <div className="mt-1 flex justify-between text-[11px] text-stone-400">
+            <span>{progressPct}% mục tiêu</span>
+            {overTarget && <span className="text-rose-300">Đã vượt khuyến nghị</span>}
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="section-header">
+          <h3>Macro hôm nay</h3>
+          <Activity size={16} className="text-amber-300" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="metric-box">
+            <strong>{data?.protein ?? 0}g</strong>
+            <span>Protein</span>
+          </div>
+          <div className="metric-box">
+            <strong>{data?.fat ?? 0}g</strong>
+            <span>Chất béo</span>
+          </div>
+          <div className="metric-box">
+            <strong>{data?.carbs ?? 0}g</strong>
+            <span>Carbs</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="section-header">
+          <h3>Chi tiết món hôm nay</h3>
+          <span>{data?.items.length ?? 0} món</span>
+        </div>
+        {data === null ? (
+          <p className="text-sm text-stone-400">Đang tải...</p>
+        ) : data.items.length === 0 ? (
+          <p className="text-sm text-stone-400">Chưa đặt món nào hôm nay. Mở "Căn tin" để bắt đầu!</p>
+        ) : (
+          <div className="space-y-2">
+            {data.items.map((entry, idx) => (
+              <div className="list-row" key={`${entry.name}-${idx}`}>
+                <div className="flex-1 min-w-0">
+                  <strong className="block truncate">{entry.name}</strong>
+                  <p className="text-xs text-stone-400 m-0">× {entry.quantity}</p>
+                </div>
+                <span className="inline-flex items-center gap-1 text-orange-300 text-sm font-medium">
+                  <Flame size={12} /> {entry.calories} kcal
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="card text-xs text-stone-400">
+        <p className="leading-relaxed">
+          <strong className="text-stone-200">Lưu ý:</strong> Số calo tính dựa trên đơn hàng đã đặt hôm nay (bao gồm pending, preparing, ready, completed). Mục tiêu 2000 kcal chỉ là khuyến nghị tổng quát, có thể khác với nhu cầu thực tế của bạn.
+        </p>
       </section>
     </div>
   );
@@ -730,6 +973,7 @@ export const App = () => {
               <Route element={session ? <AttendancePage session={session} /> : null} path="/attendance" />
               <Route element={session ? <WalletPage session={session} /> : null} path="/wallet" />
               <Route element={session ? <DiningPage session={session} /> : null} path="/dining" />
+              <Route element={session ? <NutritionPage session={session} /> : null} path="/nutrition" />
               <Route element={session ? <CanteenPage session={session} /> : null} path="/canteen" />
               <Route element={session ? <ProfilePage session={session} /> : null} path="/profile" />
             </Routes>

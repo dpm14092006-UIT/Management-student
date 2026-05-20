@@ -169,26 +169,34 @@ const summarizeOrders = async () => {
     take: 200
   });
 
-  return orders.map((order) => ({
-    id: order.id,
-    status: order.status,
-    totalAmount: Number(order.totalAmount),
-    pickupTime: order.pickupTime,
-    createdAt: order.createdAt,
-    qrCode: order.qrCode,
-    pickupToken: order.pickupToken,
-    customer: {
-      id: order.user.id,
-      fullName: order.user.fullName,
-      studentCode: order.user.studentCode
-    },
-    items: order.items.map((item) => ({
-      id: item.menuItemId,
-      name: item.menuItem.name,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice)
-    }))
-  }));
+  return orders.map((order) => {
+    const totalCalories = order.items.reduce(
+      (sum, item) => sum + item.menuItem.calories * item.quantity,
+      0
+    );
+    return {
+      id: order.id,
+      status: order.status,
+      totalAmount: Number(order.totalAmount),
+      totalCalories,
+      pickupTime: order.pickupTime,
+      createdAt: order.createdAt,
+      qrCode: order.qrCode,
+      pickupToken: order.pickupToken,
+      customer: {
+        id: order.user.id,
+        fullName: order.user.fullName,
+        studentCode: order.user.studentCode
+      },
+      items: order.items.map((item) => ({
+        id: item.menuItemId,
+        name: item.menuItem.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        calories: item.menuItem.calories
+      }))
+    };
+  });
 };
 
 const getInsideCampusTotal = async () => {
@@ -366,6 +374,20 @@ app.register(fastifyStatic, {
   root: path.resolve(process.cwd(), "src/public"),
   prefix: "/static/"
 });
+
+app.get("/", async () => ({
+  name: "SCIS Backend",
+  status: "ok",
+  endpoints: {
+    health: "/healthz",
+    api: "/api",
+    static: "/static"
+  },
+  apps: {
+    student: "http://localhost:5173",
+    admin: "http://localhost:5174"
+  }
+}));
 
 app.get("/healthz", async () => {
   const [dbPing, redisPing] = await Promise.all([
@@ -648,8 +670,62 @@ app.get("/api/menu", async () => {
     category: item.category,
     imageUrl: item.imageUrl,
     prepTimeMin: item.prepTimeMin,
-    stockToday: item.stockToday
+    stockToday: item.stockToday,
+    calories: item.calories,
+    protein: Number(item.protein),
+    fat: Number(item.fat),
+    carbs: Number(item.carbs)
   }));
+});
+
+// Tổng calories theo ngày cho sinh viên (dựa trên đơn hàng completed/ready/preparing).
+app.get("/api/students/me/nutrition/daily", { preHandler: requireRoles([Role.student]) }, async (request: AuthedRequest) => {
+  const startOfDay = startOfDayUtc(new Date());
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+  const orders = await prisma.order.findMany({
+    where: {
+      userId: request.user.id,
+      createdAt: { gte: startOfDay, lt: endOfDay },
+      status: { in: [OrderStatus.completed, OrderStatus.ready, OrderStatus.preparing, OrderStatus.pending] }
+    },
+    include: {
+      items: { include: { menuItem: true } }
+    }
+  });
+
+  let calories = 0;
+  let protein = 0;
+  let fat = 0;
+  let carbs = 0;
+  const itemBreakdown: Array<{ name: string; quantity: number; calories: number }> = [];
+
+  for (const order of orders) {
+    for (const item of order.items) {
+      const qty = item.quantity;
+      const itemCal = item.menuItem.calories * qty;
+      calories += itemCal;
+      protein += Number(item.menuItem.protein) * qty;
+      fat += Number(item.menuItem.fat) * qty;
+      carbs += Number(item.menuItem.carbs) * qty;
+      itemBreakdown.push({ name: item.menuItem.name, quantity: qty, calories: itemCal });
+    }
+  }
+
+  // Daily target dùng cho thanh tiến độ (sinh viên ~ 2000 kcal/ngày).
+  const dailyTarget = 2000;
+
+  return {
+    date: startOfDay.toISOString().slice(0, 10),
+    calories,
+    protein: Math.round(protein * 10) / 10,
+    fat: Math.round(fat * 10) / 10,
+    carbs: Math.round(carbs * 10) / 10,
+    dailyTarget,
+    progress: Math.min(calories / dailyTarget, 1.5),
+    items: itemBreakdown,
+    orderCount: orders.length
+  };
 });
 
 app.post("/api/orders", { preHandler: requireRoles([Role.student]) }, async (request: AuthedRequest, reply) => {
@@ -739,6 +815,7 @@ app.get("/api/orders/me", { preHandler: requireRoles([Role.student]) }, async (r
       id: order.id,
       status: order.status,
       totalAmount: order.totalAmount,
+      totalCalories: order.totalCalories,
       pickupTime: order.pickupTime,
       qrCode: order.qrCode,
       pickupToken: order.pickupToken,
@@ -747,7 +824,8 @@ app.get("/api/orders/me", { preHandler: requireRoles([Role.student]) }, async (r
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        unitPrice: item.unitPrice
+        unitPrice: item.unitPrice,
+        calories: item.calories
       }))
     }));
 });
